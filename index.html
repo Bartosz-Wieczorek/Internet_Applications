@@ -1,99 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sklep z Płytkami – Styl, Jakość i Inspiracja</title>
-
-    <script src="//wi.arturk.pl/zen-style.js.php?styles[]=style-1&styles[]=style-2" defer></script>
-
-    <meta name="description" content="Sklep z płytkami ceramicznymi, gresowymi i dekoracyjnymi. Znajdź idealne płytki do łazienki, kuchni i tarasu. Najlepsze kolekcje i doradztwo.">
-    <meta name="keywords" content="płytki, gres, ceramiczne, dekoracyjne, łazienkowe, tarasowe, sklep, Warszawa">
-    <meta name="author" content="Sklep z Płytkami Sp. z o.o.">
-
-    <script defer>
-        document.addEventListener("DOMContentLoaded", () => {
-            const sections = document.querySelectorAll("main section");
-            const navLinks = document.querySelectorAll("nav a");
-
-            window.addEventListener("scroll", () => {
-                let current = "";
-                sections.forEach(section => {
-                    const sectionTop = section.offsetTop;
-                    if (pageYOffset >= sectionTop - 80) {
-                        current = section.getAttribute("id");
-                    }
-                });
-
-                navLinks.forEach(link => {
-                    link.classList.remove("active");
-                    if (link.getAttribute("href") === "#" + current) {
-                        link.classList.add("active");
-                    }
-                });
-            });
-        });
-    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LAB D — Pogoda</title>
+    <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:24px}
+        .search{display:flex;gap:8px;align-items:center}
+        input[type=text]{padding:8px;font-size:16px;width:320px}
+        button{padding:8px 12px;font-size:16px}
+        .results{margin-top:18px}
+        .card{border-radius:8px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        .forecast-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+        .muted{color:#555;font-size:14px}
+    </style>
 </head>
-
 <body>
-<header>
-    <h1>Sklep z Płytkami</h1>
-    <nav aria-label="Główne menu">
-        <ul>
-            <li><a href="#home" class="active">Strona główna</a></li>
-            <li><a href="#offer">Oferta</a></li>
-            <li><a href="#contact">Kontakt</a></li>
-        </ul>
-    </nav>
-</header>
+<h1>Pogoda</h1>
+<p>Wprowadź miasto i kliknij <strong>Pogoda</strong>.</p>
 
-<main>
-    <section id="home">
-        <h2>O sklepie</h2>
-        <h3>Nasza misja</h3>
-        <p>Naszą misją jest tworzenie pięknych i trwałych przestrzeni.
-            Wierzymy, że dobrze dobrane płytki potrafią całkowicie odmienić wnętrze,
-            dlatego stawiamy na jakość, styl i nowoczesne rozwiązania.</p>
 
-        <h3>Dlaczego my?</h3>
-        <p>Wyróżnia nas doświadczenie, szeroki wybór i indywidualne podejście do każdego klienta.
-            Oferujemy tylko sprawdzone marki i kolekcje, które łączą trwałość z wyjątkowym designem.</p>
-    </section>
+<div class="search">
+    <input type="text" id="cityInput" placeholder="np. Warsaw" />
+    <button id="getWeatherBtn">Pogoda</button>
+</div>
 
-    <section id="offer">
-        <h2>Oferta</h2>
-        <h3>Płytki łazienkowe</h3>
-        <p>Oferujemy bogatą gamę płytek łazienkowych – od klasycznych bieli po modne imitacje kamienia i drewna.</p>
 
-        <h3>Płytki tarasowe</h3>
-        <p>Płytki tarasowe to połączenie elegancji i odporności na warunki atmosferyczne.</p>
+<div id="output" class="results"></div>
 
-        <h3>Płytki dekoracyjne</h3>
-        <p>Dodaj charakteru swoim wnętrzom dzięki płytkom dekoracyjnym!</p>
 
-        <ul>
-            <li>Płytki ceramiczne</li>
-            <li>Płytki gresowe</li>
-            <li>Płytki klinkierowe</li>
-            <li>Płytki 3D</li>
-        </ul>
-    </section>
-
-    <section id="contact">
-        <h2>Kontakt</h2>
-        <h3>Dane firmy</h3>
-        <p>
-            <strong>Sklep z Płytkami Sp. z o.o.</strong><br>
-            ul. Ulica 15, 00-001 Warszawa<br>
-            Tel: <a href="tel:123456789">123-456-789</a><br>
-            E-mail: <a href="mailto:email@plytki.pl">email@plytki.pl</a>
-        </p>
-    </section>
-</main>
-
-<footer>
-    <p>&copy; 2025 Sklep z Płytkami.</p>
-</footer>
+<script src="app.js"></script>
 </body>
 </html>
