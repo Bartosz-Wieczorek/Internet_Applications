@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LAB D — Pogoda</title>
+    <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:24px}
+        .search{display:flex;gap:8px;align-items:center}
+        input[type=text]{padding:8px;font-size:16px;width:320px}
+        button{padding:8px 12px;font-size:16px}
+        .results{margin-top:18px}
+        .card{border-radius:8px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        .forecast-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+        .muted{color:#555;font-size:14px}
+    </style>
+</head>
+<body>
+<h1>Pogoda</h1>
+<p>Wprowadź miasto i kliknij <strong>Pogoda</strong>.</p>
+
+
+<div class="search">
+    <input type="text" id="cityInput" placeholder="np. Warsaw" />
+    <button id="getWeatherBtn">Pogoda</button>
+</div>
+
+
+<div id="output" class="results"></div>
+
+
+<script src="app.js"></script>
+</body>
+</html>
