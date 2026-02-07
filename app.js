@@ -1,151 +1,105 @@
-const API_KEY = 'ddcd55ad7e800bf28b4985ba980a99c9';
-const BASE = 'https://api.openweathermap.org/data/2.5';
+const map = L.map('map').setView([52.23, 21.01], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
 
-const cityInput = document.getElementById('cityInput');
-const getWeatherBtn = document.getElementById('getWeatherBtn');
-const output = document.getElementById('output');
+let marker;
+const GRID = 4;
+let placed = 0;
+const piecesDiv = document.getElementById('pieces');
+const boardDiv = document.getElementById('board');
+const statusEl = document.getElementById('status');
 
-getWeatherBtn.addEventListener('click', () => {
-    const city = cityInput.value.trim();
-    if (!city) {
-        showMessage('Wpisz nazwę miasta.');
-        return;
-    }
-
-    output.innerHTML = '<p class="muted">Ładowanie danych...</p>';
-
-    fetchCurrentWeather(city);
-    fetchForecast(city);
-});
-
-function showMessage(msg, isError = false) {
-    output.innerHTML = `<div class="card"><p style="color:${isError ? 'crimson' : 'inherit'}">${escapeHtml(msg)}</p></div>`;
+for (let i = 0; i < GRID * GRID; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'target';
+    cell.dataset.id = i;
+    cell.addEventListener('dragover', e => e.preventDefault());
+    cell.addEventListener('drop', dropPiece);
+    boardDiv.appendChild(cell);
 }
 
-function fetchCurrentWeather(city) {
-    const xhr = new XMLHttpRequest();
-    const url = `${BASE}/weather?q=${encodeURIComponent(city)}&units=metric&appid=${API_KEY}`;
+document.getElementById('permBtn').onclick = () => {
+    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(()=>{},()=>{});
+    if ("Notification" in window) Notification.requestPermission();
+    statusEl.textContent = "Status: pobrano zgody.";
+};
 
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState !== 4) return;
-
-        if (xhr.status === 200) {
-            try {
-                const data = JSON.parse(xhr.responseText);
-                console.log('XMLHttpRequest:', data);
-                renderCurrentWeather(data);
-            } catch (e) {
-                showMessage('Blad', true);
-            }
-        } else if (xhr.status === 404) {
-            showMessage('Nie znaleziono miasta', true);
-        }
-    };
-
-    xhr.onerror = function () {
-        showMessage('Blad polaczenia', true);
-    };
-
-    xhr.send();
-}
-
-function renderCurrentWeather(data) {
-    const html = `
-    <div class="card">
-      <h2>Pogoda dla ${escapeHtml(data.name || '—')}</h2>
-      <p><strong>${escapeHtml((data.weather?.[0]?.description) || '—')}</strong></p>
-      <p>Temperatura: <strong>${formatNumber(data.main?.temp)}°C</strong></p>
-      <p class="muted">Wilgotność: ${formatNumber(data.main?.humidity)}% · Wiatr: ${formatNumber(data.wind?.speed)} m/s</p>
-    </div>
-  `;
-
-    const existingForecast = document.getElementById('forecastContainer');
-    if (existingForecast) {
-        output.innerHTML = html + existingForecast.outerHTML;
-    } else {
-        output.innerHTML = html;
-    }
-}
-
-async function fetchForecast(city) {
-    const url = `${BASE}/forecast?q=${encodeURIComponent(city)}&units=metric&appid=${API_KEY}`;
-
-    try {
-        const res = await fetch(url);
-
-        if (!res.ok) {
-            if (res.status === 404) {
-                showMessage('Nie znaleziono miasta', true);
-            } else {
-                showMessage(`Blad: ${res.status}`, true);
-            }
-            return;
-        }
-
-        const data = await res.json();
-        console.log('Odpowiedź forecast (Fetch):', data);
-        renderForecast(data);
-    } catch (e) {
-        showMessage('Blad polaczenia', true);
-    }
-}
-
-function renderForecast(data) {
-    if (!data || !Array.isArray(data.list)) {
-        showMessage('Nieprawidłowa odpowiedź z forecast API.', true);
-        return;
-    }
-
-    const groups = {};
-    data.list.forEach(item => {
-        const day = item.dt_txt.slice(0, 10);
-        if (!groups[day]) groups[day] = [];
-        groups[day].push(item);
+document.getElementById('locBtn').onclick = () => {
+    if (!navigator.geolocation) return alert("Brak geolokalizacji");
+    navigator.geolocation.getCurrentPosition(pos => {
+        const {latitude, longitude} = pos.coords;
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([latitude, longitude]).addTo(map)
+            .bindPopup(`Twoja lokalizacja:<br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}`).openPopup();
+        map.setView([latitude, longitude], 15);
+        statusEl.textContent = "Status: pokazano lokalizację.";
     });
+};
 
-    let html = `<div id="forecastContainer" class="card"><h3>Prognoza 5-dniowa (co 3h)</h3>`;
-    html += '<div class="forecast-grid">';
+document.getElementById('mapBtn').onclick = async () => {
+    statusEl.textContent = "Status: generowanie obrazu...";
+    const canvas = await html2canvas(document.getElementById('map'), {useCORS:true});
+    createPuzzle(canvas);
+    statusEl.textContent = "Status: puzzle gotowe!";
+};
 
-    Object.keys(groups).slice(0, 5).forEach(day => {
-        let block = `<div><strong>${escapeHtml(day)}</strong><ul style="padding-left:16px; margin:6px 0; list-style:disc">`;
+function createPuzzle(canvas) {
+    piecesDiv.innerHTML = "";
+    placed = 0;
+    const w = canvas.width / GRID;
+    const h = canvas.height / GRID;
+    const pieces = [];
 
-        groups[day].forEach(it => {
-            const time = it.dt_txt.slice(11, 16);
-            const desc = it.weather?.[0]?.description || '-';
-            block += `<li>${escapeHtml(time)} — ${escapeHtml(desc)}, ${formatNumber(it.main?.temp)}°C</li>`;
-        });
+    for (let r = 0; r < GRID; r++) {
+        for (let c = 0; c < GRID; c++) {
+            const off = document.createElement("canvas");
+            off.width = w; off.height = h;
+            off.getContext("2d").drawImage(canvas, c*w, r*h, w, h, 0, 0, w, h);
+            pieces.push({id: r*GRID+c, img: off.toDataURL()});
+        }
+    }
 
-        block += '</ul></div>';
-        html += block;
+    pieces.sort(() => Math.random() - 0.5);
+
+    pieces.forEach(({id, img}) => {
+        const el = document.createElement("div");
+        el.className = "piece";
+        el.style.backgroundImage = `url(${img})`;
+        el.draggable = true;
+        el.dataset.id = id;
+        el.addEventListener("dragstart", e => e.dataTransfer.setData("id", id));
+        piecesDiv.appendChild(el);
     });
+}
 
-    html += '</div></div>';
-
-    const existingCurrent = output.querySelector('.card');
-    if (existingCurrent) {
-        const currentHtml = existingCurrent.outerHTML;
-        output.innerHTML = currentHtml + html;
-    } else {
-        output.innerHTML = html;
+function dropPiece(e) {
+    const id = e.dataTransfer.getData("id");
+    const piece = document.querySelector(`.piece[data-id='${id}']`);
+    if (!piece) return;
+    if (id == e.target.dataset.id) {
+        e.target.appendChild(piece);
+        piece.classList.add('placed');
+        piece.draggable = false;
+        placed++;
+        statusEl.textContent = `Status: ${placed}/${GRID*GRID}`;
+        if (placed === GRID * GRID) completePuzzle();
     }
 }
 
-function formatNumber(v) {
-    if (v === undefined || v === null) return '—';
-    return Math.round(v * 10) / 10;
-}
+document.getElementById('resetBtn').onclick = () => {
+    piecesDiv.innerHTML = "";
+    boardDiv.querySelectorAll('.target').forEach(t => t.innerHTML = "");
+    placed = 0;
+    statusEl.textContent = "Status: zresetowano.";
+};
 
-function escapeHtml(str) {
-    if (str === undefined || str === null) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+function completePuzzle() {
+    statusEl.textContent = "Status: ukończono!";
+    if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Gratulacje!", { body: "Ułożyłeś mapę!" });
+    } else {
+        alert("Gratulacje! Ułożyłeś mapę!");
+    }
 }
-
-cityInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') getWeatherBtn.click();
-});
